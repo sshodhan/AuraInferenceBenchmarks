@@ -13,6 +13,7 @@ Usage:
 """
 
 import asyncio
+import json
 import sys
 import time
 
@@ -60,7 +61,6 @@ async def send_streaming_request(
             if data_str == "[DONE]":
                 break
             try:
-                import json
                 chunk = json.loads(data_str)
                 if chunk.get("choices") and chunk["choices"][0].get("delta", {}).get("content"):
                     if first_token_time is None:
