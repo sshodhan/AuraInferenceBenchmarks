@@ -10,6 +10,22 @@ from typing import Optional
 
 import yaml
 
+
+# ---------------------------------------------------------------------------
+# vLLM environment configuration
+# ---------------------------------------------------------------------------
+
+
+def configure_vllm_env():
+    """Set environment variables for vLLM compatibility on Colab/T4 GPUs.
+
+    The vLLM V1 engine has a CUTLASS DSL bug where the GPU architecture
+    string is not passed to the NVVM compiler on Turing GPUs (T4 / sm_75),
+    causing engine core initialization to fail.  Falling back to the V0
+    engine avoids this entirely.
+    """
+    os.environ.setdefault("VLLM_USE_V1", "0")
+
 # ---------------------------------------------------------------------------
 # Configuration helpers
 # ---------------------------------------------------------------------------
@@ -360,8 +376,22 @@ def print_table(headers: list[str], rows: list[list], title: str = ""):
 # ---------------------------------------------------------------------------
 
 
-def wait_for_server(base_url: str, timeout: int = 300, interval: int = 5) -> bool:
-    """Poll the vLLM server until it responds or timeout is reached."""
+def wait_for_server(
+    base_url: str,
+    timeout: int = 300,
+    interval: int = 5,
+    stderr_log: str | None = None,
+) -> bool:
+    """Poll the vLLM server until it responds or timeout is reached.
+
+    Args:
+        base_url: The vLLM API base URL (e.g. ``http://localhost:8000/v1``).
+        timeout: Maximum seconds to wait.
+        interval: Seconds between polling attempts.
+        stderr_log: Optional path to the server's stderr log file.  When the
+            server fails to start, the last 40 lines of this file are printed
+            to help with debugging.
+    """
     import urllib.request
     import urllib.error
 
@@ -378,5 +408,18 @@ def wait_for_server(base_url: str, timeout: int = 300, interval: int = 5) -> boo
         except (urllib.error.URLError, ConnectionError, OSError):
             pass
         time.sleep(interval)
+
     print("  ERROR: Server did not become ready within timeout.")
+    # Surface the server's stderr log so the user can diagnose the failure.
+    log_path = stderr_log or "/tmp/vllm_stderr.log"
+    try:
+        with open(log_path) as fh:
+            lines = fh.readlines()
+        tail = lines[-40:] if len(lines) > 40 else lines
+        print(f"\n  ── last {len(tail)} lines of {log_path} ──")
+        for line in tail:
+            print(f"  {line.rstrip()}")
+        print(f"  ── end of log ──\n")
+    except FileNotFoundError:
+        print(f"  (no log file found at {log_path})")
     return False

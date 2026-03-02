@@ -21,6 +21,7 @@ import sys
 import time
 
 from benchmarks.utils import (
+    configure_vllm_env,
     get_gpu_memory_mb,
     gpu_info_snapshot,
     load_config,
@@ -66,15 +67,17 @@ def benchmark_model(base_url: str, model: str, prompt_lengths: list[int], output
 
 def start_vllm_server(model: str, port: int) -> subprocess.Popen:
     """Start a vLLM server as a background process."""
+    configure_vllm_env()
     print(f"  Starting vLLM server for {model}...")
     proc = subprocess.Popen(
         [
             sys.executable, "-m", "vllm.entrypoints.openai.api_server",
             "--model", model,
             "--port", str(port),
+            "--enforce-eager",
         ],
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=open("/tmp/vllm_stderr.log", "w"),
     )
     return proc
 
