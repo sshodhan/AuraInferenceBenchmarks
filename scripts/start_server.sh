@@ -13,10 +13,16 @@ MODEL="${1:-Qwen/Qwen2.5-1.5B-Instruct}"
 PORT="${PORT:-8000}"
 ENABLE_PREFIX_CACHE="${ENABLE_PREFIX_CACHE:-0}"
 
+# Force the stable V0 engine.  The V1 engine has a CUTLASS DSL bug on Turing
+# GPUs (T4 / sm_75) where the architecture string is not passed to the NVVM
+# compiler, causing engine core initialisation to crash.
+export VLLM_USE_V1="${VLLM_USE_V1:-0}"
+
 ARGS=(
     --model "$MODEL"
     --port "$PORT"
     --trust-remote-code
+    --enforce-eager
 )
 
 if [ "$ENABLE_PREFIX_CACHE" = "1" ]; then

@@ -26,6 +26,7 @@ import sys
 import time
 
 from benchmarks.utils import (
+    configure_vllm_env,
     get_gpu_memory_mb,
     gpu_info_snapshot,
     load_config,
@@ -54,16 +55,18 @@ USER_QUESTIONS = [
 
 
 def start_vllm_server(model: str, port: int, enable_prefix_caching: bool) -> subprocess.Popen:
+    configure_vllm_env()
     cmd = [
         sys.executable, "-m", "vllm.entrypoints.openai.api_server",
         "--model", model,
         "--port", str(port),
+        "--enforce-eager",
     ]
     if enable_prefix_caching:
         cmd.append("--enable-prefix-caching")
     mode = "prefix caching ENABLED" if enable_prefix_caching else "prefix caching DISABLED"
     print(f"  Starting server ({mode}): {' '.join(cmd)}")
-    return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=open("/tmp/vllm_stderr.log", "w"))
 
 
 def stop_server(proc: subprocess.Popen):
