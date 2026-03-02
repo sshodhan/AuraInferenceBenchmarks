@@ -85,6 +85,12 @@ Edit `configs/benchmark_config.yaml` to adjust:
 | Lambda Labs | A10G | 24 GB | ~$0.75/hr |
 | Local | Any NVIDIA | 16 GB+ | — |
 
+## Theory
+
+| Document | What It Covers |
+|----------|---------------|
+| [**The Full Journey of an Inference Request**](docs/inference_journey.md) | Step-by-step walkthrough of how a prompt becomes output tokens — tokenization, prefill, decode, KV cache, arithmetic intensity, and why decode is memory-bandwidth-bound |
+
 ## Connection to Aura Ecosystem
 
 These labs teach the exact concepts needed to eventually self-host a model for AuraApp:
